@@ -13,7 +13,7 @@ app.use(cors());
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.c3mzl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -51,6 +51,19 @@ app.post("/tasks", async (req, res) => {
 app.get("/tasks", async (req, res) => {
     const tasks = await taskCollection.find().toArray();
     res.json(tasks);
+});
+
+
+app.put("/tasks/:id", async (req, res) => {
+    const { id } = req.params;
+    const { category } = req.body;
+
+    const result = await taskCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { category } }
+    );
+
+    res.json({ message: "Task updated", modifiedCount: result.modifiedCount });
 });
 
 
