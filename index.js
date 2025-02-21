@@ -54,17 +54,40 @@ app.get("/tasks", async (req, res) => {
 });
 
 
+// app.put("/tasks/:id", async (req, res) => {
+//     const { id } = req.params;
+//     const { category } = req.body;
+
+//     const result = await taskCollection.updateOne(
+//         { _id: new ObjectId(id) },
+//         { $set: { category } }
+//     );
+
+//     res.json({ message: "Task updated", modifiedCount: result.modifiedCount });
+// });
+
+
 app.put("/tasks/:id", async (req, res) => {
     const { id } = req.params;
-    const { category } = req.body;
-
+    const { title, description, category } = req.body;
+  
+    const updateData = {};
+    if (title) updateData.title = title;
+    if (description) updateData.description = description;
+    if (category) updateData.category = category;
+  
     const result = await taskCollection.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: { category } }
+      { _id: new ObjectId(id) },
+      { $set: updateData }
     );
-
+  
     res.json({ message: "Task updated", modifiedCount: result.modifiedCount });
-});
+  });
+  
+  app.delete("/tasks/:id", async (req, res) => {
+    await taskCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+    res.json({ message: "Task deleted" });
+  });
 
 
 
