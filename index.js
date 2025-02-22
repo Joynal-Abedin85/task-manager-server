@@ -33,8 +33,7 @@ async function run() {
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
-    const taskcollection = client.db('taskManage').collection('task')
-
+   
 
 
 const taskCollection = client.db("taskManage").collection("tasks");
@@ -54,40 +53,68 @@ app.get("/tasks", async (req, res) => {
 });
 
 
-// app.put("/tasks/:id", async (req, res) => {
-//     const { id } = req.params;
-//     const { category } = req.body;
 
-//     const result = await taskCollection.updateOne(
-//         { _id: new ObjectId(id) },
-//         { $set: { category } }
-//     );
 
-//     res.json({ message: "Task updated", modifiedCount: result.modifiedCount });
-// });
 
 
 app.put("/tasks/:id", async (req, res) => {
     const { id } = req.params;
+    if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "Invalid Task ID format" });
+    }
+
     const { title, description, category } = req.body;
-  
     const updateData = {};
     if (title) updateData.title = title;
     if (description) updateData.description = description;
     if (category) updateData.category = category;
-  
-    const result = await taskCollection.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updateData }
-    );
-  
-    res.json({ message: "Task updated", modifiedCount: result.modifiedCount });
-  });
+
+    try {
+        const result = await taskCollection.updateOne(
+            { _id: new ObjectId(id) },
+            { $set: updateData }
+        );
+
+        if (result.modifiedCount === 0) {
+            return res.status(404).json({ message: "Task not found or no changes made" });
+        }
+
+        res.json({ message: "Task updated", modifiedCount: result.modifiedCount });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to update task" });
+    }
+});
+
+
+
+app.put("/tasks/reorder", async (req, res) => {
+    const { category, tasks } = req.body;
+
+    try {
+        for (const task of tasks) {
+            if (!ObjectId.isValid(task._id)) {
+                return res.status(400).json({ error: "Invalid Task ID format" });
+            }
+            await taskCollection.updateOne(
+                { _id: new ObjectId(task._id) },
+                { $set: { order: task.order } }
+            );
+        }
+
+        res.status(200).json({ message: "Task order updated successfully" });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to update task order" });
+    }
+});
+
   
   app.delete("/tasks/:id", async (req, res) => {
     await taskCollection.deleteOne({ _id: new ObjectId(req.params.id) });
     res.json({ message: "Task deleted" });
   });
+
+
+  
 
 
 
